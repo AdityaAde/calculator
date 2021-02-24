@@ -7,9 +7,9 @@ class HalamanKedua extends StatefulWidget {
 }
 
 class _HalamanKeduaState extends State<HalamanKedua> {
+  //hitung luas dan volume
   final controller = PageController();
   final _formKey = GlobalKey<FormState>();
-
   var lebar = 0, panjang = 0, tinggi = 0, hasil1 = 0, hasil2 = 0;
 
   void hasilLuas() {
@@ -25,6 +25,75 @@ class _HalamanKeduaState extends State<HalamanKedua> {
       if (_formKey.currentState.validate()) {
         hasil2 = panjang * lebar * tinggi;
       }
+    });
+  }
+
+  //Konversi
+  String _startMeasure;
+  String _convertedMeasure;
+  double _numberForm;
+  String _resultMessage;
+
+  final TextStyle inputStyle = TextStyle(
+    fontSize: 18,
+    color: Colors.black87,
+  );
+  final TextStyle labelStyle = TextStyle(
+    fontSize: 20,
+    color: Colors.black,
+  );
+
+  void initState() {
+    _numberForm = 0;
+    super.initState();
+  }
+
+  final List<String> _measures = [
+    'meters',
+    'kilometers',
+    'grams',
+    'kilograms',
+    'feet',
+    'miles',
+    'pounds (lbs)',
+    'ounces',
+  ];
+
+  final Map<String, int> _measuresMap = {
+    'meters': 0,
+    'kilometers': 1,
+    'grams': 2,
+    'kilograms': 3,
+    'feet': 4,
+    'miles': 5,
+    'pounds (lbs)': 6,
+    'ounces': 7,
+  };
+
+  dynamic _formulas = {
+    '0': [1, 0.001, 0, 0, 3.28084, 0.000621371, 0, 0],
+    '1': [1000, 1, 0, 0, 3280.84, 0.621371, 0, 0],
+    '2': [0, 0, 1, 0.0001, 0, 0, 0.00220462, 0.035274],
+    '3': [0, 0, 1000, 1, 0, 0, 2.20462, 35.274],
+    '4': [0.3048, 0.0003048, 0, 0, 1, 0.000189394, 0, 0],
+    '5': [1609.34, 1.60934, 0, 0, 5280, 1, 0, 0],
+    '6': [0, 0, 453.592, 0.453592, 0, 0, 1, 16],
+    '7': [0, 0, 28.3495, 0.0283495, 3.28084, 0, 0.0625, 1],
+  };
+
+  void convert(double value, String from, String to) {
+    int nFrom = _measuresMap[from];
+    int nTo = _measuresMap[to];
+    var multiplier = _formulas[nFrom.toString()][nTo];
+    var result = value * multiplier;
+    if (result == 0) {
+      _resultMessage = 'This conversion cannot be performed';
+    } else {
+      _resultMessage =
+          '${_numberForm.toString()} $_startMeasure = ${result.toString()} $_convertedMeasure';
+    }
+    setState(() {
+      _resultMessage = _resultMessage;
     });
   }
 
@@ -48,6 +117,7 @@ class _HalamanKeduaState extends State<HalamanKedua> {
         body: TabbarContent(
           controller: controller,
           children: <Widget>[
+            //Hitung Luas dan Volume
             SingleChildScrollView(
               child: Form(
                 key: _formKey,
@@ -63,12 +133,6 @@ class _HalamanKeduaState extends State<HalamanKedua> {
                         SizedBox(height: 20),
                         TextFormField(
                           keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value.isEmpty) {
-                              return 'Masukan panjang';
-                            }
-                            return null;
-                          },
                           onChanged: (value) {
                             panjang = int.parse(value);
                           },
@@ -79,12 +143,6 @@ class _HalamanKeduaState extends State<HalamanKedua> {
                         SizedBox(height: 20),
                         TextFormField(
                             keyboardType: TextInputType.number,
-                            validator: (value1) {
-                              if (value1.isEmpty) {
-                                return 'masukan lebar';
-                              }
-                              return null;
-                            },
                             onChanged: (value1) {
                               lebar = int.parse(value1);
                             },
@@ -117,12 +175,6 @@ class _HalamanKeduaState extends State<HalamanKedua> {
                         Text("Volume", style: TextStyle(fontSize: 30)),
                         SizedBox(height: 20),
                         TextFormField(
-                          validator: (value2) {
-                            if (value2.isEmpty) {
-                              return 'masukan angka';
-                            }
-                            return null;
-                          },
                           onChanged: (value3) {
                             tinggi = int.parse(value3);
                           },
@@ -159,7 +211,104 @@ class _HalamanKeduaState extends State<HalamanKedua> {
                 ),
               ),
             ),
-            Container(color: Colors.red),
+            //Hitungan Konversi
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  TextField(
+                    style: inputStyle,
+                    decoration: InputDecoration(
+                      hintText: "Masukan Nilai",
+                    ),
+                    onChanged: (text) {
+                      var rv = double.tryParse(text);
+                      if (rv != null) {
+                        setState(() {
+                          _numberForm = rv;
+                        });
+                      }
+                    },
+                  ),
+                  Row(
+                    children: [
+                      DropdownButton(
+                        style: inputStyle,
+                        hint: Text(
+                          "Unit",
+                          style: inputStyle,
+                        ),
+                        items: _measures.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _startMeasure = value;
+                          });
+                        },
+                        value: _startMeasure,
+                      ),
+                      Spacer(),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Colors.blue[600],
+                        size: 24.0,
+                        semanticLabel:
+                            'Text to announce in accessibility modes',
+                      ),
+                      Spacer(),
+                      DropdownButton(
+                        hint: Text(
+                          "Unit",
+                          style: inputStyle,
+                        ),
+                        style: inputStyle,
+                        items: _measures.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              style: inputStyle,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _convertedMeasure = value;
+                          });
+                        },
+                        value: _convertedMeasure,
+                      ),
+                    ],
+                  ),
+                  RaisedButton(
+                    color: Colors.blue,
+                    child:
+                        Text('Konversi', style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      if (_startMeasure.isEmpty ||
+                          _convertedMeasure.isEmpty ||
+                          _numberForm == 0) {
+                        return;
+                      } else {
+                        convert(_numberForm, _startMeasure, _convertedMeasure);
+                      }
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  /*  Spacer(
+                    flex: 1,
+                  ), */
+                  Center(
+                    child: Text((_resultMessage == null) ? '' : _resultMessage,
+                        style: labelStyle),
+                  ),
+                ],
+              ),
+            ),
           ],
         ));
   }

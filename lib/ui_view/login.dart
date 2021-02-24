@@ -90,7 +90,7 @@ class _MainPageState extends State<MainPage> {
                           TextFormField(
                               validator: (value2) {
                                 if (value2.length < 6) {
-                                  return 'password tidak boleh kurang dari 6 digit';
+                                  return 'password wajib di isi, tidak boleh kurang dari 6 digit';
                                 }
                                 return null;
                               },
